@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QQ - Unified Dashboard</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #030a14;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Header with controls */
+#header {
+  background: #1a1a2e;
+  padding: 16px 24px;
+  border-bottom: 2px solid #00ff88;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+}
+
+#header h1 {
+  font-size: 24px;
+  color: #00ff88;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#controls {
+  display: flex;
+  gap: 16px;
+}
+
+.toggle-btn {
+  padding: 10px 18px;
+  border: 2px solid #555;
+  background: #2a2a3e;
+  color: #999;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.toggle-btn:hover { background: #3a3a5e; }
+
+.toggle-btn.active {
+  background: #00ff88;
+  color: #000;
+  border-color: #00ff88;
+  font-weight: bold;
+}
+
+/* Main content area */
+#main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Left: Camera + QQ Pet */
+#viewer-panel {
+  flex: 2;
+  background: #000;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+#camera-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+#camera-feed {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+  opacity: 0.3;
+}
+
+#qq-canvas-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+}
+
+/* Right: Info + Controls */
+#sidebar {
+  flex: 1;
+  background: #1a1a2e;
+  border-left: 2px solid #00ff88;
+  display: flex;
+  flex-direction: column;
+  max-width: 400px;
+}
+
+#status-panel {
+  padding: 20px;
+  border-bottom: 1px solid #00ff88;
+}
+
+#status-panel h2 {
+  font-size: 18px;
+  color: #00ff88;
+  margin-bottom: 16px;
+}
+
+.stat-row {
+  margin-bottom: 12px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.stat-bar {
+  background: rgba(0,0,0,0.5);
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.stat-fill {
+  height: 100%;
+  transition: width 0.5s;
+}
+
+.stat-fill.hunger { background: linear-gradient(90deg, #ff6b6b, #ffd93d); }
+.stat-fill.attention { background: linear-gradient(90deg, #a0ffe0, #7fffe0); }
+.stat-fill.xp { background: linear-gradient(90deg, #ffd93d, #ff6b6b); }
+
+.mood-display {
+  padding: 12px;
+  background: rgba(0, 255, 136, 0.1);
+  border-radius: 8px;
+  text-align: center;
+  margin-top: 16px;
+}
+
+.mood-display .emoji {
+  font-size: 32px;
+}
+
+.mood-display .text {
+  font-size: 14px;
+  color: #00ff88;
+  margin-top: 8px;
+}
+
+#interaction-panel {
+  padding: 20px;
+  border-bottom: 1px solid #00ff88;
+}
+
+#interaction-panel h2 {
+  font-size: 18px;
+  color: #00ff88;
+  margin-bottom: 16px;
+}
+
+.action-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.action-btn {
+  padding: 16px;
+  background: #2a2a3e;
+  border: 2px solid #00ff88;
+  border-radius: 8px;
+  color: #00ff88;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: #3a3a5e;
+  transform: translateY(-2px);
+}
+
+.action-btn:active {
+  transform: translateY(0);
+}
+
+#activity-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+#activity-log h2 {
+  font-size: 18px;
+  color: #00ff88;
+  margin-bottom: 16px;
+}
+
+.log-entry {
+  padding: 8px 12px;
+  background: #2a2a3e;
+  border-left: 3px solid #00ff88;
+  margin-bottom: 8px;
+  font-size: 13px;
+  border-radius: 4px;
+}
+
+.log-entry .time {
+  color: #888;
+  font-size: 11px;
+}
+
+/* Presence indicator */
+#presence-indicator {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #00ff88;
+  border-radius: 8px;
+  z-index: 10;
+  display: none;
+}
+
+#presence-indicator.show {
+  display: block;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>🫧 QQ Dashboard</h1>
+  <div id="controls">
+    <button class="toggle-btn" id="camera-toggle" onclick="toggleCamera()">
+      📷 Camera: <span id="camera-status">OFF</span>
+    </button>
+    <button class="toggle-btn" id="mic-toggle" onclick="toggleMic()">
+      🎤 Mic: <span id="mic-status">OFF</span>
+    </button>
+    <button class="toggle-btn active" id="sound-toggle" onclick="toggleSound()">
+      🔊 Sound: <span id="sound-status">ON</span>
+    </button>
+  </div>
+</div>
+
+<div id="main">
+  <div id="viewer-panel">
+    <div id="camera-container">
+      <video id="camera-feed" autoplay playsinline muted></video>
+    </div>
+    <div id="qq-canvas-container">
+      <iframe src="http://localhost:8080/" style="width: 100%; height: 100%; border: none;"></iframe>
+    </div>
+    <div id="presence-indicator">
+      👤 <strong>You're here!</strong>
+    </div>
+  </div>
+
+  <div id="sidebar">
+    <div id="status-panel">
+      <h2>QQ Status</h2>
+      
+      <div class="stat-row">
+        <div class="stat-label">Hunger: <span id="hunger-value">--</span>/100</div>
+        <div class="stat-bar">
+          <div class="stat-fill hunger" id="hunger-bar" style="width: 0%"></div>
+        </div>
+      </div>
+      
+      <div class="stat-row">
+        <div class="stat-label">Attention: <span id="attention-value">--</span>/100</div>
+        <div class="stat-bar">
+          <div class="stat-fill attention" id="attention-bar" style="width: 0%"></div>
+        </div>
+      </div>
+      
+      <div class="stat-row">
+        <div class="stat-label">Level <span id="level-value">--</span> XP: <span id="xp-value">--</span></div>
+        <div class="stat-bar">
+          <div class="stat-fill xp" id="xp-bar" style="width: 0%"></div>
+        </div>
+      </div>
+      
+      <div class="mood-display">
+        <div class="emoji" id="mood-emoji">🫧</div>
+        <div class="text" id="mood-text">Calm</div>
+        <div class="text" style="color: #888; font-size: 12px;" id="thoughts-text">--</div>
+      </div>
+    </div>
+
+    <div id="interaction-panel">
+      <h2>Interact</h2>
+      <div class="action-buttons">
+        <button class="action-btn" onclick="feedQQ()">🫧 Feed</button>
+        <button class="action-btn" onclick="playWithQQ()">🎨 Play</button>
+        <button class="action-btn" onclick="petQQ()">💕 Pet</button>
+      </div>
+    </div>
+
+    <div id="activity-log">
+      <h2>Activity Log</h2>
+      <div id="log-entries"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  camera: false,
+  mic: false,
+  sound: true,
+  stream: null,
+  recognition: null,
+  presenceDetected: false,
+  lastPresence: 0
+};
+
+// ============================================================
+// AUDIO SYSTEM
+// ============================================================
+const audioFiles = {
+  greeting: 'audio/greeting.mp3',
+  fed: 'audio/fed.mp3',
+  play: 'audio/play.mp3',
+  pet: 'audio/pet.mp3',
+  happy: 'audio/happy.mp3',
+  sad: 'audio/sad.mp3',
+  sleepy: 'audio/sleepy.mp3',
+  excited: 'audio/excited.mp3',
+  lonely: 'audio/lonely.mp3',
+  hungry: 'audio/hungry.mp3',
+  // Conversational
+  welcome: 'audio/welcome.mp3',
+  howday: 'audio/howday.mp3',
+  goodsee: 'audio/goodsee.mp3',
+  missyou: 'audio/missyou.mp3',
+  whatdoing: 'audio/whatdoing.mp3',
+  tired: 'audio/tired.mp3',
+  happysee: 'audio/happysee.mp3'
+};
+
+function playSound(name) {
+  if (!state.sound) return;
+  const audio = new Audio(audioFiles[name]);
+  audio.volume = 0.8;
+  audio.play().catch(err => console.log('Audio play failed:', err));
+}
+
+// ============================================================
+// CAMERA
+// ============================================================
+async function toggleCamera() {
+  state.camera = !state.camera;
+  updateUI();
+  
+  if (state.camera) {
+    try {
+      state.stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { width: 1280, height: 720 },
+        audio: false
+      });
+      document.getElementById('camera-feed').srcObject = state.stream;
+      document.getElementById('camera-feed').style.display = 'block';
+      addLog('Camera enabled');
+      startPresenceDetection();
+    } catch (err) {
+      addLog('Camera error: ' + err.message);
+      state.camera = false;
+      updateUI();
+    }
+  } else {
+    if (state.stream) {
+      state.stream.getTracks().forEach(track => track.stop());
+      state.stream = null;
+    }
+    document.getElementById('camera-feed').style.display = 'none';
+    document.getElementById('camera-feed').srcObject = null;
+    document.getElementById('presence-indicator').classList.remove('show');
+    addLog('Camera disabled');
+  }
+}
+
+// ============================================================
+// MIC
+// ============================================================
+function toggleMic() {
+  state.mic = !state.mic;
+  updateUI();
+  
+  if (state.mic) {
+    startSpeechRecognition();
+    addLog('Microphone enabled');
+  } else {
+    stopSpeechRecognition();
+    addLog('Microphone disabled');
+  }
+}
+
+function startSpeechRecognition() {
+  if (!('webkitSpeechRecognition' in window)) {
+    addLog('Speech recognition not supported');
+    return;
+  }
+  
+  state.recognition = new webkitSpeechRecognition();
+  state.recognition.continuous = true;
+  state.recognition.interimResults = false;
+  
+  state.recognition.onresult = (event) => {
+    const transcript = event.results[event.results.length - 1][0].transcript.trim();
+    addLog('You said: ' + transcript);
+    processVoiceInput(transcript);
+  };
+  
+  state.recognition.onerror = (event) => {
+    if (event.error !== 'no-speech') {
+      addLog('Speech error: ' + event.error);
+    }
+  };
+  
+  state.recognition.onend = () => {
+    if (state.mic) setTimeout(() => state.recognition.start(), 100);
+  };
+  
+  state.recognition.start();
+}
+
+function stopSpeechRecognition() {
+  if (state.recognition) {
+    state.recognition.stop();
+    state.recognition = null;
+  }
+}
+
+async function processVoiceInput(text) {
+  const lower = text.toLowerCase();
+  
+  // === SIMPLE PATTERN MATCHING (fast, cute responses) ===
+  
+  // Greetings
+  if (lower.includes('hello') || lower.includes('hey') || lower.includes('hi')) {
+    playSound('greeting');
+    return;
+  }
+  
+  // Actions
+  if (lower.includes('hungry') || lower.includes('food') || lower.includes('feed')) {
+    feedQQ();
+    return;
+  }
+  if (lower.includes('play') || lower.includes('fun')) {
+    playWithQQ();
+    return;
+  }
+  if (lower.includes('pet') || lower.includes('love')) {
+    petQQ();
+    return;
+  }
+  
+  // Emotional responses
+  if (lower.includes('good job') || lower.includes('good boy') || lower.includes('good girl')) {
+    playSound('happysee');
+    addLog('QQ: So happy!');
+    return;
+  }
+  if (lower.includes('tired') || lower.includes('exhausted')) {
+    playSound('tired');
+    addLog('QQ: You look tired...');
+    return;
+  }
+  if (lower.includes('miss you') || lower.includes('missed you')) {
+    playSound('missyou');
+    addLog('QQ: Miss you!');
+    return;
+  }
+  
+  // === COMPLEX/CONVERSATIONAL (send to OpenClaw agent) ===
+  // For questions, stories, complex statements
+  if (lower.includes('?') || lower.split(' ').length > 6) {
+    addLog('QQ is thinking...');
+    try {
+      const response = await getAgentResponse(text);
+      const shortReply = summarizeToShort(response);
+      addLog('QQ: ' + shortReply);
+      speakShortReply(shortReply);
+    } catch (err) {
+      // Fallback to cute sound if agent fails
+      playSound('happy');
+      addLog('QQ: Hehe!');
+    }
+    return;
+  }
+  
+  // Default: acknowledge with happy sound
+  playSound('happy');
+  addLog('QQ: Hehe!');
+}
+
+// === OPENCLAW AGENT INTEGRATION ===
+async function getAgentResponse(userText) {
+  // TODO: Connect to OpenClaw API when ready
+  // For now, return simulated response
+  return "I understand! That's interesting.";
+}
+
+function summarizeToShort(longResponse) {
+  // Convert agent response to short cute phrase
+  const responses = [
+    "Okay!",
+    "I see!",
+    "Got it!",
+    "Aww...",
+    "Wow!",
+    "Hehe!",
+    "Yay!"
+  ];
+  return responses[Math.floor(Math.random() * responses.length)];
+}
+
+async function speakShortReply(text) {
+  // Map short replies to existing audio files
+  const mapping = {
+    "Okay!": "happy",
+    "I see!": "happy",
+    "Got it!": "happysee",
+    "Aww...": "sad",
+    "Wow!": "excited",
+    "Hehe!": "happy",
+    "Yay!": "play"
+  };
+  
+  const sound = mapping[text] || "happy";
+  playSound(sound);
+}
+
+// ============================================================
+// SOUND TOGGLE
+// ============================================================
+function toggleSound() {
+  state.sound = !state.sound;
+  updateUI();
+  addLog(state.sound ? 'Sound enabled' : 'Sound muted');
+}
+
+// ============================================================
+// PRESENCE DETECTION
+// ============================================================
+let lastFrame = null;
+let detectionInterval = null;
+
+function startPresenceDetection() {
+  const video = document.getElementById('camera-feed');
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  
+  canvas.width = 320;
+  canvas.height = 240;
+  
+  detectionInterval = setInterval(() => {
+    if (!state.camera || !video.videoWidth) return;
+    
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const currentFrame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    
+    if (lastFrame) {
+      const diff = calculateFrameDiff(lastFrame.data, currentFrame.data);
+      const motionDetected = diff > 10;
+      
+      if (motionDetected !== state.presenceDetected) {
+        state.presenceDetected = motionDetected;
+        document.getElementById('presence-indicator').classList.toggle('show', motionDetected);
+        
+        if (motionDetected && Date.now() - state.lastPresence > 30000) {
+          // Conversational greeting
+          const greetings = ['welcome', 'goodsee', 'missyou', 'howday'];
+          const greeting = greetings[Math.floor(Math.random() * greetings.length)];
+          const greetingText = {
+            welcome: 'Welcome home!',
+            goodsee: 'Good to see you!',
+            missyou: 'Miss you!',
+            howday: 'How was your day?'
+          };
+          addLog(greetingText[greeting]);
+          playSound(greeting);
+          updateAttention(10);
+          
+          // Follow-up question after a pause
+          setTimeout(() => {
+            if (state.presenceDetected && state.mic) {
+              const followups = ['whatdoing', 'happysee'];
+              const followup = followups[Math.floor(Math.random() * followups.length)];
+              playSound(followup);
+            }
+          }, 3000);
+        }
+        
+        if (motionDetected) state.lastPresence = Date.now();
+      }
+    }
+    
+    lastFrame = currentFrame;
+  }, 1000);
+}
+
+function calculateFrameDiff(data1, data2) {
+  let diff = 0;
+  for (let i = 0; i < data1.length; i += 4) {
+    diff += Math.abs(data1[i] - data2[i]);
+  }
+  return diff / (data1.length / 4);
+}
+
+// ============================================================
+// QQ INTERACTIONS
+// ============================================================
+async function feedQQ() {
+  try {
+    const response = await fetch('http://localhost:8080/api/feed', { method: 'POST' });
+    const result = await response.json();
+    addLog('Fed QQ: ' + result.message);
+    playSound('fed');
+    updateState();
+  } catch (err) {
+    addLog('Error feeding QQ');
+  }
+}
+
+async function playWithQQ() {
+  try {
+    const response = await fetch('http://localhost:8080/api/play', { method: 'POST' });
+    const result = await response.json();
+    addLog('Played with QQ: ' + result.message);
+    playSound('play');
+    updateState();
+  } catch (err) {
+    addLog('Error playing with QQ');
+  }
+}
+
+async function petQQ() {
+  try {
+    const response = await fetch('http://localhost:8080/api/pet', { method: 'POST' });
+    const result = await response.json();
+    addLog('Petted QQ: ' + result.message);
+    playSound('pet');
+    updateState();
+  } catch (err) {
+    addLog('Error petting QQ');
+  }
+}
+
+async function updateAttention(amount) {
+  // Helper to boost attention (from presence detection)
+  try {
+    const response = await fetch('http://localhost:8080/api/state');
+    const state = await response.json();
+    state.attention = Math.min(100, state.attention + amount);
+    state.lastInteraction = Date.now();
+    // Would need a custom endpoint to update just attention, for now just log it
+  } catch (err) {}
+}
+
+// ============================================================
+// STATE POLLING
+// ============================================================
+async function updateState() {
+  try {
+    const response = await fetch('http://localhost:8080/api/state');
+    const data = await response.json();
+    
+    // Update UI
+    document.getElementById('hunger-value').textContent = Math.round(data.hunger || 0);
+    document.getElementById('hunger-bar').style.width = (data.hunger || 0) + '%';
+    
+    document.getElementById('attention-value').textContent = Math.round(data.attention || 0);
+    document.getElementById('attention-bar').style.width = (data.attention || 0) + '%';
+    
+    if (data.growth) {
+      document.getElementById('level-value').textContent = data.growth.level || 1;
+      document.getElementById('xp-value').textContent = data.growth.xp || 0;
+      // Calculate XP bar percentage
+      const stage = data.growth.stage || 'baby';
+      const xpNeeded = {baby: 100, teen: 200, adult: 300}[stage] * data.growth.level;
+      const xpPercent = ((data.growth.xp || 0) / xpNeeded) * 100;
+      document.getElementById('xp-bar').style.width = xpPercent + '%';
+    }
+    
+    // Mood
+    const moodEmojis = {
+      happy: '💗', calm: '💙', sleepy: '💤', excited: '⚡',
+      sad: '💧', angry: '😠', playful: '🎨', affectionate: '💕',
+      lonely: '🌙', surprised: '😲'
+    };
+    document.getElementById('mood-emoji').textContent = moodEmojis[data.mood] || '🫧';
+    document.getElementById('mood-text').textContent = (data.mood || 'calm').charAt(0).toUpperCase() + (data.mood || 'calm').slice(1);
+    document.getElementById('thoughts-text').textContent = data.thoughts || '';
+    
+    // Check for low needs and play sounds
+    if (data.hunger < 30 && Math.random() < 0.1) {
+      playSound('hungry');
+    }
+    if (data.attention < 30 && Math.random() < 0.1) {
+      playSound('lonely');
+    }
+    
+  } catch (err) {
+    console.error('State update error:', err);
+  }
+}
+
+// ============================================================
+// ACTIVITY LOG
+// ============================================================
+function addLog(text) {
+  const logDiv = document.getElementById('log-entries');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  const time = new Date().toLocaleTimeString();
+  entry.innerHTML = `<div class="time">${time}</div>${text}`;
+  logDiv.insertBefore(entry, logDiv.firstChild);
+  
+  // Keep only last 20 entries
+  while (logDiv.children.length > 20) {
+    logDiv.removeChild(logDiv.lastChild);
+  }
+}
+
+// ============================================================
+// UI UPDATES
+// ============================================================
+function updateUI() {
+  document.getElementById('camera-toggle').classList.toggle('active', state.camera);
+  document.getElementById('camera-status').textContent = state.camera ? 'ON' : 'OFF';
+  
+  document.getElementById('mic-toggle').classList.toggle('active', state.mic);
+  document.getElementById('mic-status').textContent = state.mic ? 'ON' : 'OFF';
+  
+  document.getElementById('sound-toggle').classList.toggle('active', state.sound);
+  document.getElementById('sound-status').textContent = state.sound ? 'ON' : 'OFF';
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('load', () => {
+  addLog('QQ Dashboard ready');
+  updateState();
+  setInterval(updateState, 2000); // Poll state every 2 seconds
+  updateUI();
+});
+
+// Cleanup
+window.addEventListener('beforeunload', () => {
+  if (state.stream) {
+    state.stream.getTracks().forEach(track => track.stop());
+  }
+  stopSpeechRecognition();
+});
+</script>
+
+</body>
+</html>
