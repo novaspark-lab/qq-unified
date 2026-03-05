@@ -93,6 +93,50 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // API: Chat - send message to QQ, get response
+  if (req.url === '/api/chat' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { message } = JSON.parse(body);
+        
+        // Write chat request
+        const chatRequestPath = path.join(__dirname, 'chat-request.json');
+        const chatResponsePath = path.join(__dirname, 'chat-response.json');
+        
+        // Clear old response
+        if (fs.existsSync(chatResponsePath)) fs.unlinkSync(chatResponsePath);
+        
+        // Write request for QQ to pick up
+        fs.writeFileSync(chatRequestPath, JSON.stringify({
+          message,
+          timestamp: Date.now()
+        }));
+        
+        // Poll for response (max 15 seconds)
+        let reply = null;
+        for (let i = 0; i < 30; i++) {
+          await new Promise(r => setTimeout(r, 500));
+          if (fs.existsSync(chatResponsePath)) {
+            const resp = JSON.parse(fs.readFileSync(chatResponsePath, 'utf8'));
+            reply = resp.reply;
+            try { fs.unlinkSync(chatResponsePath); } catch(e) {}
+            try { fs.unlinkSync(chatRequestPath); } catch(e) {}
+            break;
+          }
+        }
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ reply: reply || 'Hmm...' }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message, reply: 'Oops!' }));
+      }
+    });
+    return;
+  }
+
   let filePath = req.url === '/' ? 'index.html' : req.url.slice(1);
   filePath = path.join(__dirname, filePath);
   

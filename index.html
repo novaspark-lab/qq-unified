@@ -549,23 +549,28 @@ async function processVoiceInput(text) {
 
 // === OPENCLAW AGENT INTEGRATION ===
 async function getAgentResponse(userText) {
-  // TODO: Connect to OpenClaw API when ready
-  // For now, return simulated response
-  return "I understand! That's interesting.";
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: userText })
+    });
+    const data = await response.json();
+    return data.reply || 'Hmm...';
+  } catch (e) {
+    console.error('Agent error:', e);
+    return 'Oops!';
+  }
 }
 
 function summarizeToShort(longResponse) {
-  // Convert agent response to short cute phrase
-  const responses = [
-    "Okay!",
-    "I see!",
-    "Got it!",
-    "Aww...",
-    "Wow!",
-    "Hehe!",
-    "Yay!"
-  ];
-  return responses[Math.floor(Math.random() * responses.length)];
+  // QQ already responds short, but trim if needed
+  if (!longResponse) return 'Okay!';
+  // Remove emojis and asterisks for TTS, keep text short
+  let clean = longResponse.replace(/\*[^*]+\*/g, '').replace(/[💙💗✨🫧💕💤😲💧🎉]/g, '').trim();
+  // Take first sentence only
+  const firstSentence = clean.split(/[.!?]/)[0];
+  return firstSentence ? firstSentence.trim() + '!' : 'Okay!';
 }
 
 async function speakShortReply(text) {
