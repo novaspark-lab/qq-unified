@@ -471,38 +471,57 @@ async function processVoiceInput(text) {
   
   // Greetings
   if (lower.includes('hello') || lower.includes('hey') || lower.includes('hi')) {
-    playSound('greeting');
+    speakShortReply('Hi! 💙');
+    addLog('QQ: Hi! 💙');
     return;
   }
   
   // Actions
   if (lower.includes('hungry') || lower.includes('food') || lower.includes('feed')) {
     feedQQ();
+    speakShortReply('Yummy! Thank you!');
     return;
   }
   if (lower.includes('play') || lower.includes('fun')) {
     playWithQQ();
+    speakShortReply('Yay! Fun time!');
     return;
   }
-  if (lower.includes('pet') || lower.includes('love')) {
+  if (lower.includes('pet') || lower.includes('cuddle') || lower.includes('hug')) {
     petQQ();
+    speakShortReply('Ahh... nice...');
     return;
   }
   
   // Emotional responses
   if (lower.includes('good job') || lower.includes('good boy') || lower.includes('good girl')) {
-    playSound('happysee');
-    addLog('QQ: So happy!');
+    speakShortReply('Yay! Thank you!');
+    addLog('QQ: Yay! Thank you! 💗');
     return;
   }
   if (lower.includes('tired') || lower.includes('exhausted')) {
-    playSound('tired');
-    addLog('QQ: You look tired...');
+    speakShortReply('Rest well...');
+    addLog('QQ: Rest well... 💙');
     return;
   }
   if (lower.includes('miss you') || lower.includes('missed you')) {
-    playSound('missyou');
-    addLog('QQ: Miss you!');
+    speakShortReply('Miss you too!');
+    addLog('QQ: Miss you too! 💗');
+    return;
+  }
+  if (lower.includes('how are you') || lower.includes('you okay')) {
+    speakShortReply('I am good! Just floating here.');
+    addLog('QQ: I am good! Just floating 🫧');
+    return;
+  }
+  if (lower.includes('love you')) {
+    speakShortReply('Love you!');
+    addLog('QQ: Love you! 💗');
+    return;
+  }
+  if (lower.includes('bye') || lower.includes('goodbye') || lower.includes('good night')) {
+    speakShortReply('Bye bye! Sleep well!');
+    addLog('QQ: Bye bye! 💙');
     return;
   }
   
@@ -523,9 +542,9 @@ async function processVoiceInput(text) {
     return;
   }
   
-  // Default: acknowledge with happy sound
-  playSound('happy');
-  addLog('QQ: Hehe!');
+  // Default: acknowledge
+  speakShortReply('Okay!');
+  addLog('QQ: Okay! 🫧');
 }
 
 // === OPENCLAW AGENT INTEGRATION ===
@@ -550,19 +569,20 @@ function summarizeToShort(longResponse) {
 }
 
 async function speakShortReply(text) {
-  // Map short replies to existing audio files
-  const mapping = {
-    "Okay!": "happy",
-    "I see!": "happy",
-    "Got it!": "happysee",
-    "Aww...": "sad",
-    "Wow!": "excited",
-    "Hehe!": "happy",
-    "Yay!": "play"
-  };
-  
-  const sound = mapping[text] || "happy";
-  playSound(sound);
+  // Use browser TTS
+  if ('speechSynthesis' in window) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.1;
+    utterance.pitch = 1.3; // Slightly higher pitch for cute voice
+    utterance.volume = 0.9;
+    
+    // Try to use a female voice
+    const voices = speechSynthesis.getVoices();
+    const femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Samantha'));
+    if (femaleVoice) utterance.voice = femaleVoice;
+    
+    speechSynthesis.speak(utterance);
+  }
 }
 
 // ============================================================
