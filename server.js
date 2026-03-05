@@ -9,6 +9,17 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = 9000;
+const STATE_PATH = path.join(__dirname, 'state.json');
+
+// Initialize state.json if doesn't exist
+if (!fs.existsSync(STATE_PATH)) {
+  fs.writeFileSync(STATE_PATH, JSON.stringify({
+    mood: 'calm',
+    energy: 70,
+    hunger: 60,
+    attention: 50
+  }, null, 2));
+}
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -20,6 +31,68 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
+  // CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+
+  // API: Get state
+  if (req.url === '/api/state') {
+    try {
+      const state = fs.readFileSync(STATE_PATH, 'utf8');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(state);
+    } catch (e) {
+      res.writeHead(500); res.end('{}');
+    }
+    return;
+  }
+
+  // API: Feed
+  if (req.url === '/api/feed' && req.method === 'POST') {
+    try {
+      const state = JSON.parse(fs.readFileSync(STATE_PATH, 'utf8'));
+      state.hunger = Math.min(100, (state.hunger || 50) + 30);
+      state.mood = 'happy';
+      fs.writeFileSync(STATE_PATH, JSON.stringify(state, null, 2));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true }));
+    } catch (e) {
+      res.writeHead(500); res.end('{"error":"feed failed"}');
+    }
+    return;
+  }
+
+  // API: Play
+  if (req.url === '/api/play' && req.method === 'POST') {
+    try {
+      const state = JSON.parse(fs.readFileSync(STATE_PATH, 'utf8'));
+      state.attention = Math.min(100, (state.attention || 50) + 25);
+      state.mood = 'playful';
+      fs.writeFileSync(STATE_PATH, JSON.stringify(state, null, 2));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true }));
+    } catch (e) {
+      res.writeHead(500); res.end('{"error":"play failed"}');
+    }
+    return;
+  }
+
+  // API: Pet
+  if (req.url === '/api/pet' && req.method === 'POST') {
+    try {
+      const state = JSON.parse(fs.readFileSync(STATE_PATH, 'utf8'));
+      state.attention = Math.min(100, (state.attention || 50) + 15);
+      state.mood = 'grateful';
+      fs.writeFileSync(STATE_PATH, JSON.stringify(state, null, 2));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true }));
+    } catch (e) {
+      res.writeHead(500); res.end('{"error":"pet failed"}');
+    }
+    return;
+  }
+
   let filePath = req.url === '/' ? 'index.html' : req.url.slice(1);
   filePath = path.join(__dirname, filePath);
   

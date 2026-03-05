@@ -278,7 +278,7 @@ body {
       <video id="camera-feed" autoplay playsinline muted></video>
     </div>
     <div id="qq-canvas-container">
-      <iframe src="http://localhost:8080/" style="width: 100%; height: 100%; border: none;"></iframe>
+      <iframe src="http://localhost:9000/" style="width: 100%; height: 100%; border: none;"></iframe>
     </div>
     <div id="presence-indicator">
       👤 <strong>You're here!</strong>
@@ -647,7 +647,7 @@ function calculateFrameDiff(data1, data2) {
 // ============================================================
 async function feedQQ() {
   try {
-    const response = await fetch('http://localhost:8080/api/feed', { method: 'POST' });
+    const response = await fetch('http://localhost:9000/api/feed', { method: 'POST' });
     const result = await response.json();
     addLog('Fed QQ: ' + result.message);
     playSound('fed');
@@ -659,7 +659,7 @@ async function feedQQ() {
 
 async function playWithQQ() {
   try {
-    const response = await fetch('http://localhost:8080/api/play', { method: 'POST' });
+    const response = await fetch('http://localhost:9000/api/play', { method: 'POST' });
     const result = await response.json();
     addLog('Played with QQ: ' + result.message);
     playSound('play');
@@ -671,7 +671,7 @@ async function playWithQQ() {
 
 async function petQQ() {
   try {
-    const response = await fetch('http://localhost:8080/api/pet', { method: 'POST' });
+    const response = await fetch('http://localhost:9000/api/pet', { method: 'POST' });
     const result = await response.json();
     addLog('Petted QQ: ' + result.message);
     playSound('pet');
@@ -684,7 +684,7 @@ async function petQQ() {
 async function updateAttention(amount) {
   // Helper to boost attention (from presence detection)
   try {
-    const response = await fetch('http://localhost:8080/api/state');
+    const response = await fetch('http://localhost:9000/api/state');
     const state = await response.json();
     state.attention = Math.min(100, state.attention + amount);
     state.lastInteraction = Date.now();
@@ -697,7 +697,7 @@ async function updateAttention(amount) {
 // ============================================================
 async function updateState() {
   try {
-    const response = await fetch('http://localhost:8080/api/state');
+    const response = await fetch('http://localhost:9000/api/state');
     const data = await response.json();
     
     // Update UI
